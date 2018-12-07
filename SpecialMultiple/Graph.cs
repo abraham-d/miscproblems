@@ -59,22 +59,32 @@ namespace SpecialMultiple
                 return children[node];
             return null;
         }
+        int Weight(List<Node> path)
+        {
+            int wt = 0;
+            for (int i = 1; i < path.Count; i++)
+            {
+                wt += Children(path[i - 1]).Where(x => x.Item1.Equals(path[i])).First().Item2;
+            }
+            return wt;
+        }
         public List<Node> Recurse(Node src, Node dst, List<Node> path, List<Node> shortest)
         {
+            Console.WriteLine("Source : {0} Dest : {1}", src, dst);
             path.Add(src);
-            if (src == dst) return path;
+            if (src.Equals(dst)) return path;
+            
             foreach (var c in Children(src))
             {
-                if (!path.Any(x => x == c.Item1))
+                var p = new List<Node>(path);
+                if (!path.Any(x => x.Equals(c.Item1)))
                 {
-                    if (shortest == null)
-                    {
-                        var newPath = Recurse(c.Item1, dst, path, shortest);
-                        if (newPath != null)
-                            shortest = newPath;
-                    }
-                }
+                    var newPath = Recurse(c.Item1, dst, p, shortest);
+                    if (shortest == null || Weight(newPath) < Weight(shortest))
+                        shortest = newPath;
+                }                
             }
+            
             return shortest;
         }
     }

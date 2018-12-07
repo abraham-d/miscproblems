@@ -23,7 +23,10 @@ namespace SpecialMultiple
                 }
                 List<Node> visited = null;
                 List<Node> path = new List<Node>();
-                var r = graph.Recurse(new Node(1), new Node(3), path, visited);
+                var start = new Node(1);
+                var dest = new Node(4);
+                var r = graph.Recurse(start, dest, path, visited);
+                Console.WriteLine("Start : {0} Dest : {1}", start, dest);
                 foreach (var p in r)
                     Console.Write("{0} ", p);
                 Console.WriteLine();
