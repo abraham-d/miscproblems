@@ -31,6 +31,12 @@ namespace SpecialMultiple
                     Console.Write("{0} ", p);
                 Console.WriteLine();
 
+                var s = graph.NonRecurse(start, dest);
+                Console.WriteLine("Start : {0} Dest : {1}", start, dest);
+                foreach (var p in s)
+                    Console.Write("{0} ", p);
+                Console.WriteLine();
+
                 //foreach(var node in graph.Nodes)
                 //{
                 //    Console.WriteLine(node);
