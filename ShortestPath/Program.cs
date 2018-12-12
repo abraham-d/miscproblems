@@ -13,9 +13,54 @@ namespace ShortestPath
         static void Main(string[] args)
         {
             FindShortestPath01();
-            FindShortestPath();
+            //FindShortestPath();
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
+        }
+
+        private static int[] ShortestPathMatrix(int[,] weights, int start, int n)
+        {
+            /*
+             * 
+             procedure FloydWarshallWithPathReconstruction ()
+   for each edge (u,v)
+      dist[u][v] ← w(u,v)  // the weight of the edge (u,v)
+      next[u][v] ← v
+   for k from 1 to |V| // standard Floyd-Warshall implementation
+      for i from 1 to |V|
+         for j from 1 to |V|
+            if dist[i][j] > dist[i][k] + dist[k][j] then
+               dist[i][j] ← dist[i][k] + dist[k][j]
+               next[i][j] ← next[i][k]
+
+             * 
+             */
+            int[] result = new int[n - 1];
+            //for(int k = 0; k < n; k++)
+            int k = start;
+            {
+                for(int i = 0; i < n; i++)
+                {
+                    for(int j = 0; j < n; j++)
+                    {
+                        if (weights[i, j] > weights[i, k] + weights[k, j])
+                            weights[i, j] = weights[i, k] + weights[k, j];
+                    }
+                }
+            }
+            for (int indx = 0; indx < n; indx++)
+            {
+                if (indx == start) continue;
+                else if (indx > start)
+                {
+                    result[indx - 1] = weights[start, indx] == 0 ? -1 : weights[start, indx];
+                }
+                else
+                {
+                    result[indx] = weights[start, indx] == 0 ? -1 : weights[start, indx];
+                }
+            }
+            return result;
         }
 
         static void FindShortestPath01()
@@ -34,7 +79,8 @@ namespace ShortestPath
                     int n = Convert.ToInt32(tokens_n[0]);
                     int m = Convert.ToInt32(tokens_n[1]);
 
-                    int[][] weights = Enumerable.Repeat(Enumerable.Repeat(-1, n).ToArray(), n).ToArray();
+                    HashSet<int>[] edges = new HashSet<int>[n];
+                    int[,] weights = new int[n, n];
 
                     for (int a1 = 0; a1 < m; a1++)
                     {
@@ -43,17 +89,23 @@ namespace ShortestPath
                         int y = int.Parse(tokens_x[1]) - 1;
                         int r = int.Parse(tokens_x[2]);
 
-                        weights[x][y] = weights[x][y] == -1 ? r : Math.Min(weights[x][y], r);
-                        weights[y][x] = weights[y][x] == -1 ? r : Math.Min(weights[y][x], r);
+                        if (edges[x] == null) edges[x] = new HashSet<int>();
+                        if (edges[y] == null) edges[y] = new HashSet<int>();
+                        edges[x].Add(y);
+                        edges[y].Add(x);
+                        //weights[x, y] = weights[x, y] == 0 ? r : Math.Min(weights[x, y], r);
+                        //weights[y, x] = weights[x, y] == 0 ? r : Math.Min(weights[x, y], r);
+                        weights[x, y] = r;
+                        weights[y, x] = r;
                     }
-
                     int s = int.Parse(file.ReadLine()) - 1;
 
-                    //printWeights(weights, n, edges);
                     sw.Restart();
                     int[] result = Evaluate(weights, s, n);
+                    //int[] result = Evaluate(edges, weights, s, n);
                     Console.WriteLine(string.Join(" ", result));
-                    Console.WriteLine("Elapsed Time : {0} ms", sw.ElapsedMilliseconds);                    
+                    Console.WriteLine("Elapsed Time : {0} ms", sw.ElapsedMilliseconds);
+                    Console.WriteLine();
                 }
             }
         }
@@ -104,7 +156,7 @@ namespace ShortestPath
         { 
             var sw = new Stopwatch();
             sw.Start();
-            string filename = @"C:\projects\vs2017\ShortestPath\input07.txt";
+            string filename = @"C:\projects\vs2017\ShortestPath\testcase04.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 string line;
@@ -205,13 +257,12 @@ namespace ShortestPath
         {
             int[] result = new int[n - 1];
             for (int i = 0; i < n - 1; i++) { result[i] = -1; }
-            //int[] result = Enumerable.Repeat(-1, n - 1).ToArray();
-            Queue<Tuple<int, int>> worklist = new Queue<Tuple<int, int>>();
-            //HashSet<int> visited = new HashSet<int>();
-            worklist.Enqueue(new Tuple<int, int>(0, s));
-            while (worklist.Count > 0)
+            Stack<Tuple<int, int>> worklist = new Stack<Tuple<int, int>>();
+            
+            worklist.Push(new Tuple<int, int>(0, s));
+            while (worklist.Any())
             {
-                var current = worklist.Dequeue();
+                var current = worklist.Pop();
                 foreach(int node in edges[current.Item2])
                 {
                     if (node != s)
@@ -221,15 +272,48 @@ namespace ShortestPath
                         if (result[indx] == -1 || result[indx] > weigt)
                         {
                             result[indx] = weigt;
-                            //if (!visited.Any(x => x == node))
-                                worklist.Enqueue(new Tuple<int, int>(weigt, node));
+                            worklist.Push(new Tuple<int, int>(weigt, node));
                         }
                     }
                 }
-                //visited.Add(current.Item2);
             }
 
             return result;
+        }
+        private static int[] Evaluate(int[,] weights, int s, int n)
+        {
+            int[] result = new int[n - 1];
+            for (int i = 0; i < n - 1; i++) { result[i] = -1; }
+            Stack<Tuple<int, int>> worklist = new Stack<Tuple<int, int>>();
+
+            worklist.Push(new Tuple<int, int>(0, s));
+            while (worklist.Any())
+            {
+                var current = worklist.Pop();
+                foreach (int node in ConnectedNodes(weights, current.Item2, n))
+                {
+                    if (node != s)
+                    {
+                        int weigt = current.Item1 + weights[current.Item2, node];
+                        int indx = node > s ? node - 1 : node;
+                        if (result[indx] == -1 || result[indx] > weigt)
+                        {
+                            result[indx] = weigt;
+                            worklist.Push(new Tuple<int, int>(weigt, node));
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+        static IEnumerable<int> ConnectedNodes(int[,] weights, int node, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                if (weights[node, i] > 0)
+                    yield return i;
+            }
         }
 
         private static void printWeights(int[,] weights, int n, HashSet<int>[] edges)

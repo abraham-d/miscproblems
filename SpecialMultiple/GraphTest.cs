@@ -37,6 +37,12 @@ namespace SpecialMultiple
                     Console.Write("{0} ", p);
                 Console.WriteLine();
 
+                var sh = graph.ShortestPathFunction(start);
+                foreach(var c in graph.Nodes)
+                {
+                    Console.WriteLine("Shortest Path to {0}: {1}", c, string.Join(" ", sh(c)));
+                }
+
                 //foreach(var node in graph.Nodes)
                 //{
                 //    Console.WriteLine(node);

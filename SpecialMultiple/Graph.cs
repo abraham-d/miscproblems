@@ -88,7 +88,7 @@ namespace SpecialMultiple
             return shortest;
         }
 
-        public List<Tuple<Node,int>> NonRecurse(Node src,Node dest)
+        public List<Tuple<Node, int>> NonRecurse(Node src, Node dest)
         {
             Stack<Tuple<Node, int>> stack = new Stack<Tuple<Node, int>>();
             stack.Push(new Tuple<Node, int>(src, 0));
@@ -96,7 +96,7 @@ namespace SpecialMultiple
             List<Tuple<Node, int>> path = new List<Tuple<Node, int>>();
             List<Node> visited = new List<Node>();
             while (stack.Any())
-            {                
+            {
                 var current = stack.Pop();
                 Console.WriteLine("Visiting {0}", current);
 
@@ -104,19 +104,48 @@ namespace SpecialMultiple
                 visited.Add(current.Item1);
                 if (current.Item1.Equals(dest))
                 {
-                    if (shortest == null || shortest.Select(x=>x.Item2).Sum()< path.Select(x => x.Item2).Sum())
+                    if (shortest == null || shortest.Select(x => x.Item2).Sum() < path.Select(x => x.Item2).Sum())
                     {
                         shortest = path;
                         path = new List<Tuple<Node, int>>();
                     }
                 }
-                foreach(var c in Children(current.Item1))
+                foreach (var c in Children(current.Item1))
                 {
                     if (!visited.Any(x => x.Equals(c.Item1))) stack.Push(c);
                 }
             }
 
             return shortest;
+        }
+        public Func<Node, IEnumerable<Node>> ShortestPathFunction(Node start)
+        {
+            var previous = new Dictionary<Node, Node>();
+            Queue<Node> queue = new Queue<Node>();
+            queue.Enqueue(start);
+            while (queue.Any())
+            {
+                var current = queue.Dequeue();
+                foreach(var c in Children(current))
+                {
+                    if (previous.ContainsKey(c.Item1)) continue;
+                    previous[c.Item1] = current;
+                    queue.Enqueue(c.Item1);
+                }
+            }
+
+            IEnumerable<Node> ShortestPath(Node v)
+            {
+                var current = v;
+                while (!current.Equals(start))
+                {
+                    yield return current;
+                    current = previous[current];
+                }
+                yield return start;
+            };
+
+            return ShortestPath;
         }
     }
     /*public class Node
