@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ShortestPath
 {
@@ -9,7 +11,7 @@ namespace ShortestPath
     {
         static void MSTTest()
         {
-            string filename = @"C:\projects\vs2017\ShortestPath\hcinput00.txt";
+            string filename = @"..\..\hcinput02.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 string[] nm = file.ReadLine().Split(' ');
@@ -30,11 +32,15 @@ namespace ShortestPath
                 foreach (var road in sorted)
                     Console.WriteLine(string.Join(" ", road));
                 Console.WriteLine("============");
-                RoadsInHackerland(n, roads);
+                var ret = RoadsInHackerland(n, roads);
+                Console.WriteLine(ret);
             }
         }
         private static string RoadsInHackerland(int n, int[][] roads)
         {
+            int longest = roads.Select(x => x[2]).Max();
+            bool[] result = new bool[longest + 5];
+
             var sorted = roads.OrderBy(x => x[2]);
             List<int[]> minSpanTree = new List<int[]>();
             Dictionary<int, List<int>> trees = new Dictionary<int, List<int>>();
@@ -42,13 +48,44 @@ namespace ShortestPath
             {
                 AddRoad(trees, minSpanTree, roads, road);
             }
-            foreach (var road in minSpanTree)
-                Console.WriteLine(string.Join(" ", road));
+            //foreach (var road in minSpanTree)
+            //    Console.WriteLine(string.Join(" ", road));
 
-            Console.WriteLine("==================");
-            var p = FindPath(minSpanTree, 1, 5);
-            Console.WriteLine(string.Join(" ", p));
-            return "Not Implemented...";
+            //Console.WriteLine("==================");
+
+            for(int i = 1; i <= n; i++)
+            {
+                for(int j = i + 1; j <= n; j++)
+                {
+                    var p = FindPath(minSpanTree, i, j);
+                    //Console.WriteLine(string.Join(" ", p));
+                    foreach(int d in p)
+                    {
+                        ConvertToBin(result, d);
+                    }
+                }
+            }
+            var reversed = result.Reverse();
+            var ret = reversed.SkipWhile(x => x == false);
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var r in ret)
+                sb.Append(r ? "1" : "0");
+            return sb.ToString();
+        }
+
+        private static void ConvertToBin(bool[] result, int d)
+        {
+            if (result[d])
+            {
+                result[d] = false;
+                ConvertToBin(result, d + 1);
+            }
+            else
+            {
+                result[d] = true;
+            }
+            return;
         }
 
         private static void AddRoad(Dictionary<int, List<int>> trees, List<int[]> minSpanTree, int[][] roads, int[] road)
