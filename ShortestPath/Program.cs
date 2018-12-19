@@ -18,7 +18,7 @@ namespace ShortestPath
             //FindShortestPath01();
             //FindShortestPath();
             MSTTest();
-            RankTest();
+            //RankTest();
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }

@@ -12,7 +12,7 @@ namespace ShortestPath
     {
         static void MSTTest()
         {
-            string filename = @"..\..\hcinput02.txt";
+            string filename = @"..\..\hcinput07.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 Stopwatch sw = new Stopwatch();
@@ -60,11 +60,11 @@ namespace ShortestPath
 
             sw.Stop();
             var ts = sw.Elapsed;
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-            ts.Hours, ts.Minutes, ts.Seconds,
-            ts.Milliseconds / 10);
-            Console.WriteLine("RunTime " + elapsedTime);
+            Console.WriteLine("RunTime " + ts);
 
+            return AnotherWay(minSpanTree, longest);
+
+            sw.Start();
             for (int i = 1; i <= n; i++)
             {
                 for(int j = i + 1; j <= n; j++)
@@ -80,16 +80,40 @@ namespace ShortestPath
             var reversed = result.Reverse();
             var ret = reversed.SkipWhile(x => x == false);
 
-            sw.Start();
+            sw.Stop();
             ts = sw.Elapsed;
-            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-            ts.Hours, ts.Minutes, ts.Seconds,
-            ts.Milliseconds / 10);
             Console.WriteLine("RunTime " + ts);
 
             StringBuilder sb = new StringBuilder();
             foreach (var r in ret)
                 sb.Append(r ? "1" : "0");
+            return sb.ToString();
+        }
+
+        private static string AnotherWay(List<int[]> minSpanTree, int longest)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            bool[] result = new bool[longest + 5];
+            foreach(var edge in minSpanTree)
+            {
+                int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
+                int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
+                for(int i = 0; i < numLeft * numRight; i++)
+                {
+                    ConvertToBin(result, edge[2]);
+                }
+            }
+            var reversed = result.Reverse().SkipWhile(x => x == false);
+            StringBuilder sb = new StringBuilder();
+            foreach (var r in reversed)
+                sb.Append(r ? "1" : "0");
+            //Console.WriteLine(sb.ToString());
+
+            sw.Stop();
+            var ts = sw.Elapsed;
+            Console.WriteLine(ts);
             return sb.ToString();
         }
 
@@ -145,26 +169,29 @@ namespace ShortestPath
         }
 
 
-        //private static IEnumerable<Tuple<int,int>> Traversal(List<int[]> tree, int start)
-        //{
-        //    HashSet<int> visited = new HashSet<int>();
-        //    Stack<Tuple<int, int>> stack = new Stack<Tuple<int, int>>();
+        private static IEnumerable<int> Traversal(List<int[]> tree, int start, int other)
+        {
+            HashSet<int> visited = new HashSet<int>();
+            Stack<int> stack = new Stack<int>();
 
-        //    stack.Push(new Tuple<int, int>(start, 0));
-        //    while (stack.Any())
-        //    {
-        //        var current = stack.Pop();
-        //        if (!visited.Add(current.Item1)) continue;
+            stack.Push(start);
+            visited.Add(other);
+            while (stack.Any())
+            {
+                var current = stack.Pop();
+                if (!visited.Add(current)) continue;
 
-        //        yield return current;
+                yield return current;
 
-        //        var neighbours = graph.Neighbours(current).Where(x => !visited.Contains(x.Item1));
-        //        foreach (var neighbour in neighbours)
-        //        {
-        //            stack.Push(neighbour.Item1);
-        //        }
-        //    }
-        //}
+                var p1 = tree.Where(x => x[0] == current).Select(x => x[1]);
+                var p2 = tree.Where(x => x[1] == current).Select(x => x[0]);
+                var neighbours = p1.Concat(p2).Where(x => !visited.Contains(x));
+                foreach (var neighbour in neighbours)
+                {
+                    stack.Push(neighbour);
+                }
+            }
+        }
 
         private static IEnumerable<int> FindPath(List<int[]> tree, int start, int dest)
         {
