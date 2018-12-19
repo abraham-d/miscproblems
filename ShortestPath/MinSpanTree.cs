@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ namespace ShortestPath
             string filename = @"..\..\hcinput02.txt";
             using (StreamReader file = new StreamReader(filename))
             {
+                Stopwatch sw = new Stopwatch();
                 string[] nm = file.ReadLine().Split(' ');
                 int n = Convert.ToInt32(nm[0]);
                 int m = Convert.ToInt32(nm[1]);
@@ -38,6 +40,9 @@ namespace ShortestPath
         }
         private static string RoadsInHackerland(int n, int[][] roads)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             int longest = roads.Select(x => x[2]).Max();
             bool[] result = new bool[longest + 5];
 
@@ -53,7 +58,14 @@ namespace ShortestPath
 
             //Console.WriteLine("==================");
 
-            for(int i = 1; i <= n; i++)
+            sw.Stop();
+            var ts = sw.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+            ts.Hours, ts.Minutes, ts.Seconds,
+            ts.Milliseconds / 10);
+            Console.WriteLine("RunTime " + elapsedTime);
+
+            for (int i = 1; i <= n; i++)
             {
                 for(int j = i + 1; j <= n; j++)
                 {
@@ -67,6 +79,13 @@ namespace ShortestPath
             }
             var reversed = result.Reverse();
             var ret = reversed.SkipWhile(x => x == false);
+
+            sw.Start();
+            ts = sw.Elapsed;
+            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+            ts.Hours, ts.Minutes, ts.Seconds,
+            ts.Milliseconds / 10);
+            Console.WriteLine("RunTime " + ts);
 
             StringBuilder sb = new StringBuilder();
             foreach (var r in ret)
@@ -125,17 +144,17 @@ namespace ShortestPath
             }         
         }
 
-        
-        //private static IEnumerable<int> Traversal(List<int[]> tree, int start)
+
+        //private static IEnumerable<Tuple<int,int>> Traversal(List<int[]> tree, int start)
         //{
         //    HashSet<int> visited = new HashSet<int>();
-        //    Stack<int> stack = new Stack<int>();
+        //    Stack<Tuple<int, int>> stack = new Stack<Tuple<int, int>>();
 
-        //    stack.Push(start);
+        //    stack.Push(new Tuple<int, int>(start, 0));
         //    while (stack.Any())
         //    {
-        //        int current = stack.Pop();
-        //        if (!visited.Add(current)) continue;
+        //        var current = stack.Pop();
+        //        if (!visited.Add(current.Item1)) continue;
 
         //        yield return current;
 
@@ -146,6 +165,7 @@ namespace ShortestPath
         //        }
         //    }
         //}
+
         private static IEnumerable<int> FindPath(List<int[]> tree, int start, int dest)
         {
             Stack<Tuple<Tuple<int, int>, List<Tuple<int, int>>>> stack = new Stack<Tuple<Tuple<int, int>, List<Tuple<int, int>>>>();
@@ -171,6 +191,28 @@ namespace ShortestPath
             }
 
             return null;
+        }
+
+        static void RankTest()
+        {
+            var edge1 = Enumerable.Repeat(5, 6);
+            var edge2 = Enumerable.Repeat(9, 6);
+            var edge3 = Enumerable.Repeat(0, 12);
+            var edge4 = Enumerable.Repeat(1, 6);
+            var edge5 = Enumerable.Repeat(2, 6);
+            var edge6 = Enumerable.Repeat(4, 6);
+            bool[] result = new bool[12];
+            foreach (var w in edge1) ConvertToBin(result, w);
+            foreach (var w in edge2) ConvertToBin(result, w);
+            foreach (var w in edge3) ConvertToBin(result, w);
+            foreach (var w in edge4) ConvertToBin(result, w);
+            foreach (var w in edge5) ConvertToBin(result, w);
+            foreach (var w in edge6) ConvertToBin(result, w);
+            var rev = result.Reverse().SkipWhile(x => x == false);
+            StringBuilder sb = new StringBuilder();
+            foreach (var r in rev)
+                sb.Append(r ? "1" : "0");
+            Console.WriteLine(sb.ToString());
         }
     }
 }
