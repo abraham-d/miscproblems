@@ -61,7 +61,7 @@ namespace ShortestPath
             sw.Stop();
             var ts = sw.Elapsed;
             Console.WriteLine("RunTime " + ts);
-
+            Console.WriteLine(YetAnotherMethod(minSpanTree, longest));
             return AnotherWay(minSpanTree, longest);
 
             sw.Start();
@@ -115,6 +115,46 @@ namespace ShortestPath
             var ts = sw.Elapsed;
             Console.WriteLine(ts);
             return sb.ToString();
+        }
+
+        private static string YetAnotherMethod(List<int[]> minSpanTree, int longest)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            bool[] result = new bool[longest + 5];
+            foreach (var edge in minSpanTree)
+            {
+                int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
+                int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
+
+                int indx = 0;
+                foreach (int i in ToBin(numLeft * numRight))
+                {
+                    if (i == 1)
+                        ConvertToBin(result, edge[2] + indx);
+                    indx++;
+                }
+            }
+            var reversed = result.Reverse().SkipWhile(x => x == false);
+            StringBuilder sb = new StringBuilder();
+            foreach (var r in reversed)
+                sb.Append(r ? "1" : "0");
+            //Console.WriteLine(sb.ToString());
+
+            sw.Stop();
+            var ts = sw.Elapsed;
+            Console.WriteLine(ts);
+            return sb.ToString();
+        }
+
+        private static IEnumerable<int> ToBin(int num)
+        {
+            while (num > 0)
+            {
+                yield return num % 2;
+                num /= 2;
+            }
         }
 
         private static void ConvertToBin(bool[] result, int d)
@@ -183,13 +223,21 @@ namespace ShortestPath
 
                 yield return current;
 
-                var p1 = tree.Where(x => x[0] == current).Select(x => x[1]);
-                var p2 = tree.Where(x => x[1] == current).Select(x => x[0]);
-                var neighbours = p1.Concat(p2).Where(x => !visited.Contains(x));
-                foreach (var neighbour in neighbours)
+                var p1 = tree.Where(x => x[0] == current).Select(x => x[1]).Where(x => !visited.Contains(x));
+                foreach (var neighbour in p1)
                 {
                     stack.Push(neighbour);
                 }
+                var p2 = tree.Where(x => x[1] == current).Select(x => x[0]).Where(x => !visited.Contains(x));
+                foreach (var neighbour in p2)
+                {
+                    stack.Push(neighbour);
+                }
+                //var neighbours = p1.Concat(p2).Where(x => !visited.Contains(x));
+                //foreach (var neighbour in neighbours)
+                //{
+                //    stack.Push(neighbour);
+                //}
             }
         }
 
