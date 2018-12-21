@@ -12,7 +12,7 @@ namespace ShortestPath
     {
         static void MSTTest()
         {
-            string filename = @"..\..\hcinput07.txt";
+            string filename = @"..\..\hcinput11.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 Stopwatch sw = new Stopwatch();
@@ -61,7 +61,9 @@ namespace ShortestPath
             sw.Stop();
             var ts = sw.Elapsed;
             Console.WriteLine("RunTime " + ts);
-            Console.WriteLine(YetAnotherMethod(minSpanTree, longest));
+
+            Console.WriteLine(YetAnotherMethod1(minSpanTree, longest, n));
+
             return AnotherWay(minSpanTree, longest);
 
             sw.Start();
@@ -98,9 +100,11 @@ namespace ShortestPath
             bool[] result = new bool[longest + 5];
             foreach(var edge in minSpanTree)
             {
-                int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
-                int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
-                for(int i = 0; i < numLeft * numRight; i++)
+                int numLeft = Traversal(minSpanTree, edge[0], edge[1]);
+                int numRight = Traversal(minSpanTree, edge[1], edge[0]);
+                //int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
+                //int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
+                for (int i = 0; i < numLeft * numRight; i++)
                 {
                     ConvertToBin(result, edge[2]);
                 }
@@ -117,7 +121,7 @@ namespace ShortestPath
             return sb.ToString();
         }
 
-        private static string YetAnotherMethod(List<int[]> minSpanTree, int longest)
+        private static string YetAnotherMethod(List<int[]> minSpanTree, int longest, int n)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -125,35 +129,106 @@ namespace ShortestPath
             bool[] result = new bool[longest + 5];
             foreach (var edge in minSpanTree)
             {
-                int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
-                int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
+                int numLeft;
+                if (LeafNode(minSpanTree, edge[0])) numLeft = 1;
+                else numLeft = Traversal(minSpanTree, edge[0], edge[1]);
+                //int numLeft = Traversal(minSpanTree, edge[0], edge[1]).Count();
+
+                //int numRight = Traversal(minSpanTree, edge[1], edge[0]).Count();
+                int numRight = n - numLeft;
 
                 int indx = 0;
-                foreach (int i in ToBin(numLeft * numRight))
+                foreach (var i in ToBin(numLeft * numRight))
                 {
-                    if (i == 1)
+                    if (i)
                         ConvertToBin(result, edge[2] + indx);
                     indx++;
                 }
             }
-            var reversed = result.Reverse().SkipWhile(x => x == false);
-            StringBuilder sb = new StringBuilder();
-            foreach (var r in reversed)
-                sb.Append(r ? "1" : "0");
+            var reversed = result.Reverse().SkipWhile(x => x == false).Select(x => x ? 1 : 0);
+            //StringBuilder sb = new StringBuilder();
+            //foreach (var r in reversed)
+            //    sb.Append(r ? "1" : "0");
             //Console.WriteLine(sb.ToString());
 
             sw.Stop();
             var ts = sw.Elapsed;
             Console.WriteLine(ts);
-            return sb.ToString();
+            //return sb.ToString();
+            return string.Join("", reversed);
         }
 
-        private static IEnumerable<int> ToBin(int num)
+        private static string YetAnotherMethod1(List<int[]> minSpanTree, int longest, int n)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            //bool[] result = new bool[longest + 5];
+            var tree = MakeTree(minSpanTree);
+
+            var ew = EdgeWeights(tree, minSpanTree, n, longest + 5);
+            var result = ew.AsParallel().WithDegreeOfParallelism(4).Aggregate((x, y) => AddBin(x, y));
+            //foreach (var e in ew)
+            //{                
+            //    AddBin(result, e, longest + 5);
+            //}
+            var reversed = result.Reverse().SkipWhile(x => x == false).Select(x => x ? 1 : 0);
+            
+            sw.Stop();
+            var ts = sw.Elapsed;
+            Console.WriteLine(ts);
+            return string.Join("", reversed);
+        }
+
+        private static bool[] AddBin(bool[] x, bool[] y)
+        {
+            bool c = false;
+            bool[] result = new bool[x.Length];
+            for (int i = 0; i < x.Length; i++)
+            {
+                result[i] = (x[i] ^ y[i]) ^ c;
+                c = x[i] & y[i];
+            }
+            return result;
+        }
+
+        private static IEnumerable<bool[]> EdgeWeights(Dictionary<int, List<int>> tree, List<int[]> minSpanTree, int n, int len)
+        {
+            foreach(var edge in minSpanTree.AsParallel())
+            {
+                int numLeft = CountRight(tree, edge[0], edge[1]);
+                int numRight = n - numLeft;
+                int indx = 0;
+                bool[] tmp = new bool[len];
+                foreach (var i in ToBin(numLeft * numRight))
+                {
+                    if (i) tmp[edge[2] + indx] = i;
+                    indx++;
+                }
+
+                yield return tmp;
+            }
+        }
+
+        private static void AddBin(bool[] result, bool[] tmp, int len)
+        {
+            bool c = false;
+            for(int i = 0; i < len; i++)
+            {
+                bool x = result[i];
+                result[i] = (x ^ tmp[i]) ^ c;
+                c = x & tmp[i];
+            }
+        }
+
+        private static IEnumerable<bool> ToBin(int num)
         {
             while (num > 0)
             {
-                yield return num % 2;
-                num /= 2;
+                yield return (num & 1) == 1;
+                num >>= 1;
+                //yield return num % 2;
+                //num /= 2;
             }
         }
 
@@ -208,12 +283,48 @@ namespace ShortestPath
             }         
         }
 
+        private static Dictionary<int,List<int>> MakeTree(List<int[]> minSpanTree)
+        {
+            Dictionary<int, List<int>> result = new Dictionary<int, List<int>>();
+            foreach(var edge in minSpanTree)
+            {
+                if (result.ContainsKey(edge[0]))
+                {
+                    result[edge[0]].Add(edge[1]);
+                }
+                else
+                {
+                    result.Add(edge[0], new List<int> { edge[1] });
+                }
 
-        private static IEnumerable<int> Traversal(List<int[]> tree, int start, int other)
+                if (result.ContainsKey(edge[1]))
+                {
+                    result[edge[1]].Add(edge[0]);
+                }
+                else
+                {
+                    result.Add(edge[1], new List<int> { edge[0] });
+                }
+            }
+            return result;
+        }
+        static int CountRight(Dictionary<int, List<int>> tree, int edge0, int edge1)
+        {
+            int ret = 0;
+            if (tree[edge0].Count == 1) return 1;
+            foreach (int n in tree[edge0])
+            {
+                if (n == edge1) continue;
+                ret += CountRight(tree, n, edge0);
+            }
+
+            return ret + 1;
+        }
+        private static int Traversal(List<int[]> tree, int start, int other)
         {
             HashSet<int> visited = new HashSet<int>();
             Stack<int> stack = new Stack<int>();
-
+            int count = 0;
             stack.Push(start);
             visited.Add(other);
             while (stack.Any())
@@ -221,16 +332,21 @@ namespace ShortestPath
                 var current = stack.Pop();
                 if (!visited.Add(current)) continue;
 
-                yield return current;
+                //yield return current;
+                count++;
 
                 var p1 = tree.Where(x => x[0] == current).Select(x => x[1]).Where(x => !visited.Contains(x));
                 foreach (var neighbour in p1)
                 {
+                    //if (LeafNode(tree, neighbour)) { count++; }
+                    //else { stack.Push(neighbour); }
                     stack.Push(neighbour);
                 }
                 var p2 = tree.Where(x => x[1] == current).Select(x => x[0]).Where(x => !visited.Contains(x));
                 foreach (var neighbour in p2)
                 {
+                    //if (LeafNode(tree, neighbour)) { count++; }
+                    //else { stack.Push(neighbour); }
                     stack.Push(neighbour);
                 }
                 //var neighbours = p1.Concat(p2).Where(x => !visited.Contains(x));
@@ -239,6 +355,12 @@ namespace ShortestPath
                 //    stack.Push(neighbour);
                 //}
             }
+            return count;
+        }
+
+        private static bool LeafNode(List<int[]> tree, int neighbour)
+        {
+            return tree.Where(x => x[0] == neighbour || x[1] == neighbour).Count() == 1;
         }
 
         private static IEnumerable<int> FindPath(List<int[]> tree, int start, int dest)
@@ -288,6 +410,13 @@ namespace ShortestPath
             foreach (var r in rev)
                 sb.Append(r ? "1" : "0");
             Console.WriteLine(sb.ToString());
+        }
+        static void TaskTest()
+        {
+            var x = Enumerable.Range(1, 10);
+            Console.WriteLine(string.Join(" ", x));
+            var pairs = x.Zip(x.Skip(1), (a, b) => new { a, b });
+            Console.WriteLine(string.Join(" ", pairs));
         }
     }
 }
