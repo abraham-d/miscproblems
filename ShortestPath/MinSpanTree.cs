@@ -53,11 +53,13 @@ namespace ShortestPath
             foreach (var road in sorted)
             {
                 AddRoad(trees, minSpanTree, roads, road);
+                //AddRoad(minSpanTree, roads, road);
             }
             //foreach (var road in minSpanTree)
             //    Console.WriteLine(string.Join(" ", road));
 
             //Console.WriteLine("==================");
+            //return YetAnotherMethod2(minSpanTree, longest, n);
 
             sw.Stop();
             var ts = sw.Elapsed;
@@ -188,17 +190,17 @@ namespace ShortestPath
 
         private static string YetAnotherMethod2(List<int[]> minSpanTree, int longest, int n)
         {
-            var tree = MakeTree(minSpanTree);
+            var tree = MakeTreeNew(minSpanTree);
             return EdgeWeightsNew(tree, minSpanTree, n, longest + 5);
         }
 
-        private static string EdgeWeightsNew(Dictionary<int, List<int>> tree, List<int[]> minSpanTree, int n, int len)
+        private static string EdgeWeightsNew(Dictionary<int, HashSet<int>> tree, List<int[]> minSpanTree, int n, int len)
         {
             int[] result = new int[len];
             Queue<Task<Tuple<int, int>>> tasks = new Queue<Task<Tuple<int, int>>>();
             foreach(var edge in minSpanTree)
             {
-                tasks.Enqueue(Task.Factory.StartNew(() => { return new Tuple<int, int>(edge[2], CountRight(tree, edge[0], edge[1])); }));
+                tasks.Enqueue(Task.Factory.StartNew(() => { return new Tuple<int, int>(edge[2], CountRightNew(tree, edge[0], edge[1])); }));
             }
             while (tasks.Any())
             {
@@ -308,6 +310,43 @@ namespace ShortestPath
             return;
         }
 
+        private static void AddRoad(List<int[]> minSpanTree, int[][] roads, int[] road)
+        {
+            Dictionary<int, HashSet<int>> trees = new Dictionary<int, HashSet<int>>();
+            var min = Math.Min(road[0], road[1]);
+            var max = Math.Max(road[0], road[1]);
+            var minKey = trees.FirstOrDefault(x => x.Value.Contains(min));
+            var maxKey = trees.FirstOrDefault(x => x.Value.Contains(max));
+
+            if (minKey.Value == null && maxKey.Value == null)
+            {
+                minSpanTree.Add(road);
+                trees.Add(min, new HashSet<int> { road[0], road[1] });
+            }
+            else if (minKey.Value != null && maxKey.Value == null)
+            {
+                if (!minKey.Value.Contains(max))
+                {
+                    minSpanTree.Add(road);
+                    trees[minKey.Key].Add(max);
+                }
+            }
+            else if (minKey.Value == null && maxKey.Value != null)
+            {
+                if (!maxKey.Value.Contains(min))
+                {
+                    minSpanTree.Add(road);
+                    trees[maxKey.Key].Add(min);
+                }
+            }
+            else
+            {
+                if (minKey.Value.Contains(max) || maxKey.Value.Contains(min)) return;
+                minSpanTree.Add(road);
+                trees[minKey.Key].UnionWith(new HashSet<int>(trees[maxKey.Key]) { max });
+                trees.Remove(maxKey.Key);
+            }
+        }
         private static void AddRoad(Dictionary<int, List<int>> trees, List<int[]> minSpanTree, int[][] roads, int[] road)
         {
             var min = Math.Min(road[0], road[1]);
@@ -369,6 +408,43 @@ namespace ShortestPath
                 }
             }
             return result;
+        }
+        private static Dictionary<int, HashSet<int>> MakeTreeNew(List<int[]> minSpanTree)
+        {
+            Dictionary<int, HashSet<int>> result = new Dictionary<int, HashSet<int>>();
+            foreach (var edge in minSpanTree)
+            {
+                if (result.ContainsKey(edge[0]))
+                {
+                    result[edge[0]].Add(edge[1]);
+                }
+                else
+                {
+                    result.Add(edge[0], new HashSet<int> { edge[1] });
+                }
+
+                if (result.ContainsKey(edge[1]))
+                {
+                    result[edge[1]].Add(edge[0]);
+                }
+                else
+                {
+                    result.Add(edge[1], new HashSet<int> { edge[0] });
+                }
+            }
+            return result;
+        }
+        static int CountRightNew(Dictionary<int, HashSet<int>> tree, int edge0, int edge1)
+        {
+            int ret = 0;
+            if (tree[edge0].Count == 1) return 1;
+            foreach (int n in tree[edge0])
+            {
+                if (n == edge1) continue;
+                ret += CountRightNew(tree, n, edge0);
+            }
+
+            return ret + 1;
         }
         static int CountRight(Dictionary<int, List<int>> tree, int edge0, int edge1)
         {

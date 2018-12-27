@@ -17,9 +17,12 @@ namespace ShortestPath
             //GraphTest();
             //FindShortestPath01();
             //FindShortestPath();
-            MSTTest();
+            //MSTTest();
             //RankTest();
             //TaskTest();
+
+            Console.WriteLine(Encryption("haveaniceday"));
+
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
