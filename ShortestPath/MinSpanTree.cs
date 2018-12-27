@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ShortestPath
 {
@@ -60,9 +61,14 @@ namespace ShortestPath
 
             sw.Stop();
             var ts = sw.Elapsed;
-            Console.WriteLine("RunTime " + ts);
+            Console.WriteLine("AddRoad : {0}", ts);
+            sw.Start();
 
+            Console.WriteLine(YetAnotherMethod2(minSpanTree, longest, n));            
+            Console.WriteLine("YetAnotherMethod2 : {0}", sw.Elapsed);
+            sw.Restart();
             Console.WriteLine(YetAnotherMethod1(minSpanTree, longest, n));
+            Console.WriteLine("YetAnotherMethod1 : {0}", sw.Elapsed);
 
             return AnotherWay(minSpanTree, longest);
 
@@ -178,6 +184,62 @@ namespace ShortestPath
             var ts = sw.Elapsed;
             Console.WriteLine(ts);
             return string.Join("", reversed);
+        }
+
+        private static string YetAnotherMethod2(List<int[]> minSpanTree, int longest, int n)
+        {
+            var tree = MakeTree(minSpanTree);
+            return EdgeWeightsNew(tree, minSpanTree, n, longest + 5);
+        }
+
+        private static string EdgeWeightsNew(Dictionary<int, List<int>> tree, List<int[]> minSpanTree, int n, int len)
+        {
+            int[] result = new int[len];
+            Queue<Task<Tuple<int, int>>> tasks = new Queue<Task<Tuple<int, int>>>();
+            foreach(var edge in minSpanTree)
+            {
+                tasks.Enqueue(Task.Factory.StartNew(() => { return new Tuple<int, int>(edge[2], CountRight(tree, edge[0], edge[1])); }));
+            }
+            while (tasks.Any())
+            {
+                var task = tasks.Dequeue();
+                var item = task.Result;
+                int numLeft = item.Item2;
+                int count = numLeft * (n - numLeft);
+                int indx = item.Item1;
+                foreach(var d in ToBinNew(count))
+                {
+                    if (d == 1)
+                    {
+                        AddBinNew(result, indx, d);
+                    }
+                    indx++;
+                }
+            }
+            return string.Join("", result.Reverse().SkipWhile(x => x == 0));
+        }
+
+        private static void AddBinNew(int[] result, int indx, int d)
+        {
+            int c = 0;
+            int x = result[indx];
+            result[indx++] = x ^ d;
+            c = x & d;
+            while (c > 0)
+            {
+                x = result[indx];
+                result[indx++] = x ^ c;
+                c = x & c;
+            }
+        }
+
+        private static IEnumerable<int> ToBinNew(int num)
+        {
+            while (num > 0)
+            {
+                yield return num & 1;
+                num >>= 1;
+            }
         }
 
         private static bool[] AddBin(bool[] x, bool[] y)
