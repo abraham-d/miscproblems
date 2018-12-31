@@ -21,7 +21,9 @@ namespace ShortestPath
             //RankTest();
             //TaskTest();
 
-            Console.WriteLine(Encryption("haveaniceday"));
+            //Console.WriteLine(Encryption("haveaniceday"));
+
+            LCSTest();
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
