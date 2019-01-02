@@ -20,7 +20,9 @@ namespace ShortestPath
 
             //LCSTest();
 
-            GraphNew.GraphTest();
+            //GraphNew.GraphTest();
+
+            JeaniesRouteTest();
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
