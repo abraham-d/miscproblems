@@ -22,7 +22,14 @@ namespace ShortestPath
 
             //GraphNew.GraphTest();
 
-            JeaniesRouteTest();
+            //JeaniesRouteTest();
+
+            //BigIntTest();
+
+            //EugeneTest();
+            //ETest();
+
+            CircularBuffertest();
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -9,7 +10,7 @@ namespace ShortestPath
     {
         static void JeaniesRouteTest()
         {
-            string filename = @"C:\projects\vs2017\ShortestPath\jrctestcase02.txt";
+            string filename = @"C:\projects\vs2017\ShortestPath\jrctestcase08.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 string[] nk = file.ReadLine().Split(' ');
@@ -23,8 +24,11 @@ namespace ShortestPath
                     roads[roadsRowItr] = Array.ConvertAll(file.ReadLine().Split(' '), roadsTemp => Convert.ToInt32(roadsTemp));
                 }
 
+                var sw = new Stopwatch();
+                sw.Start();
                 int result = JeanisRoute(city, roads);
-                Console.WriteLine("Result : {0}", result);
+                sw.Stop();
+                Console.WriteLine("Result : {0}  Elapsed time : {1}", result, sw.Elapsed);
             }
         }
         static int JeanisRoute(int[] k, int[][] roads)
@@ -33,18 +37,24 @@ namespace ShortestPath
             FilterRoads(roads, k, status);
             var filtered = roads.Zip(status, (x, y) => new { edge = x, status = y })
                             .Where(x => x.status == false)
-                            .Select(x => x.edge)
-                            .OrderBy(x => x[2]);
-            Console.WriteLine("filtered edge count : {0}", filtered.Count());
-            
-            var mst = Kruskal(filtered, roads.Length + 2);
+                            .Select(x => x.edge);            
+                            //.OrderBy(x => x[2]);
+            //Console.WriteLine("filtered edge count : {0}, Sum : {1}", filtered.Count(), filtered.Sum(x => x[2]));
+
+            //var mst = Kruskal(filtered, roads.Length + 2);
+            //var s = filtered.OrderByDescending(x => x[1]).First()[0];
+            var mst = filtered;
             var n1 = BFS(mst, filtered.First()[0]);
-            var n2 = BFS(mst, n1.Item1);
-            int diameter = DFShortestDistance(filtered, n1.Item1, n2.Item1);
-            return n1.Item2 + n2.Item2 - diameter;
-        }
-        static Tuple<int, int> BFS(IEnumerable<int[]> edges, int start)
+            var n2 = BFS(mst, n1.Item1, true);
+            //var n2 = BFS(mst, s, true);
+            //int diameter = DFShortestDistance(filtered, n1.Item1, n2.Item1);
+            //return n1.Item2 + n2.Item2 - diameter;
+            return 2 * n1.Item2 - n2.Item2;
+        }        
+
+        static Tuple<int, int> BFS(IEnumerable<int[]> edges, int start, bool flag = false)
         {
+            Dictionary<int, Tuple<int, int>> path = new Dictionary<int, Tuple<int, int>>();
             HashSet<int> visited = new HashSet<int>();
             Queue<int> queue = new Queue<int>();
             var current = start;
@@ -55,12 +65,24 @@ namespace ShortestPath
                 current = queue.Dequeue();
                 if (!visited.Add(current)) continue;
 
-                var neighbours = Neighbours(edges, current).Where(x => !visited.Contains(x.Item1)).OrderBy(x => x.Item2);
+                var neighbours = Neighbours(edges, current).Where(x => !visited.Contains(x.Item1));//.OrderBy(x => x.Item2);
                 foreach (var neighbour in neighbours)
                 {
                     queue.Enqueue(neighbour.Item1);
                     distance += neighbour.Item2;
+                    path.Add(neighbour.Item1, new Tuple<int, int>(current, neighbour.Item2));
                 }
+            }
+            if (flag)
+            {
+                int dist = 0;
+                int c = current;
+                while (path.ContainsKey(c))
+                {
+                    dist += path[c].Item2;
+                    c = path[c].Item1;
+                }
+                distance = dist;
             }
             return new Tuple<int, int>(current, distance);
         }
@@ -100,7 +122,8 @@ namespace ShortestPath
         private static IEnumerable<Tuple<int, int>> Neighbours(IEnumerable<int[]> edges, int current)
         {
             return edges.Where(x => x[0] == current).Select(x => new Tuple<int, int>(x[1], x[2]))
-                .Union(edges.Where(x => x[1] == current).Select(x => new Tuple<int, int>(x[0], x[2])));
+                .Concat(edges.Where(x => x[1] == current).Select(x => new Tuple<int, int>(x[0], x[2])))
+                .OrderBy(x=>x.Item2);
         }
 
         private static IEnumerable<int[]> Kruskal(IEnumerable<int[]> edges, int n)
@@ -123,17 +146,21 @@ namespace ShortestPath
 
         static void FilterRoads(int[][] roads, int[] city, bool[] status)
         {
+            var ct = new HashSet<int>(city);
+            var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
             while (true)
             {
-                Console.WriteLine("Nodes to Exclude {0} -- {1}", status.Count(x => x == true), status.Count(x => x == false));
-                var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
+                //Console.WriteLine("Nodes to Exclude {0} -- {1}", status.Count(x => x == true), status.Count(x => x == false));
+                //var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
                 var nodesToExclude = roadsWithStatus.Select((x, i) => new { node = x.edge[0], index = i, status = x.status })
                                         .Concat(roadsWithStatus.Select((x, i) => new { node = x.edge[1], index = i, status = x.status }))
-                                        .Where(x => (x.status == false && !city.Contains(x.node)))
+                                        .Where(x => (x.status == false && !ct.Contains(x.node)))
                                         .GroupBy(x => x.node)
-                                        .Select(x => new { key = x.Key, index = x.Max(y => y.index), count = x.Count() })
-                                        .Where(x => x.count == 1)
-                                        .Select(x => x.index);
+                                        .Where(x => x.Count() == 1)
+                                        .Select(x => x.First().index);
+                                        //.Select(x => new { key = x.Key, index = x.Max(y => y.index), count = x.Count() })
+                                        //.Where(x => x.count == 1)
+                                        //.Select(x => x.index);
                 if (nodesToExclude.Any())
                 {
                     foreach (int index in nodesToExclude) status[index] = true;

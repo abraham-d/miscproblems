@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,7 +14,7 @@ namespace ShortestPath
     {
         static void MSTTest()
         {
-            string filename = @"..\..\hcinput11.txt";
+            string filename = @"..\..\hcinput07.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 Stopwatch sw = new Stopwatch();
@@ -35,10 +36,54 @@ namespace ShortestPath
                 foreach (var road in sorted)
                     Console.WriteLine(string.Join(" ", road));
                 Console.WriteLine("============");
-                var ret = RoadsInHackerland(n, roads);
+                //var ret = RoadsInHackerland(n, roads);
+                var ret = RoadsInHackerLandN(n+1, roads);
                 Console.WriteLine(ret);
             }
         }
+        private static string RoadsInHackerLandN(int n, int[][] roads)
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            Dictionary<Tuple<int, int>, int> edgeCounts = new Dictionary<Tuple<int, int>, int>();
+            var mst = Kruskal(roads.OrderBy(x => x[2]), n);
+            foreach (var edge in mst)
+            {
+                CountNodes(edgeCounts, mst, edge);
+            }
+            sw.Stop();
+            Console.WriteLine($"Elapsed  {sw.Elapsed}");
+            return "";
+        }
+        static int CountNodes(Dictionary<Tuple<int, int>, int> edgeCounts, IEnumerable<int[]> edges, int[] edge)
+        {
+            var ed = new Tuple<int, int>(edge[0], edge[1]);
+            if (edgeCounts.ContainsKey(ed))
+            {
+                return edgeCounts[ed];
+            }
+
+            HashSet<int> visited = new HashSet<int>();
+            Queue<int> queue = new Queue<int>();
+            queue.Enqueue(edge[0]);
+            visited.Add(edge[1]);
+            int count = 0;
+            while (queue.Any())
+            {
+                int node = queue.Dequeue();
+                if (visited.Contains(node)) continue;
+                count++;
+                var neighbours = edges.Where(x => x[0] == node).Select(x => x[1])
+                        .Concat(edges.Where(x => x[1] == node).Select(x => x[0]))
+                        .Where(x => !visited.Contains(x));
+                foreach (var neighbour in neighbours)
+                {
+                    queue.Enqueue(neighbour);
+                }
+            }
+            return count;
+        }
+
         private static string RoadsInHackerland(int n, int[][] roads)
         {
             Stopwatch sw = new Stopwatch();
@@ -65,6 +110,10 @@ namespace ShortestPath
             var ts = sw.Elapsed;
             Console.WriteLine("AddRoad : {0}", ts);
             sw.Start();
+
+            Console.WriteLine(YetAnotherMethod3(minSpanTree, longest, n));
+            Console.WriteLine("YetAnotherMethod3 : {0}", sw.Elapsed);
+            sw.Restart();
 
             Console.WriteLine(YetAnotherMethod2(minSpanTree, longest, n));            
             Console.WriteLine("YetAnotherMethod2 : {0}", sw.Elapsed);
@@ -194,6 +243,38 @@ namespace ShortestPath
             return EdgeWeightsNew(tree, minSpanTree, n, longest + 5);
         }
 
+        private static string YetAnotherMethod3(List<int[]> minSpanTree, int longest, int n)
+        {
+            var tree = MakeTreeNew(minSpanTree);
+            return EdgeWeightsN(tree, minSpanTree, n, longest + 5);
+        }
+
+        private static string EdgeWeightsN(Dictionary<int, HashSet<int>> tree, List<int[]> minSpanTree, int n, int len)
+        {
+            Dictionary<int, string> lookup = new Dictionary<int, string>();
+            for (int i = 0; i <= byte.MaxValue; i++)
+            {
+                lookup.Add(i, Convert.ToString(i, 2).PadLeft(8, '0'));
+            }
+
+            BigInteger sum = new BigInteger();
+            foreach (var edge in minSpanTree)
+            {
+                int indx = edge[2];
+                int numLeft = CountRightNew(tree, edge[0], edge[1]);
+                int count = numLeft * (n - numLeft);
+                BigInteger edgeValue = BigInteger.Pow(2, indx);
+                BigInteger edgeSum = BigInteger.Multiply(edgeValue, count);
+                sum = BigInteger.Add(sum, edgeSum);                
+            }
+            var bytes = sum.ToByteArray();
+            var sb = new StringBuilder();
+            for (int ctr = bytes.GetUpperBound(0); ctr >= bytes.GetLowerBound(0); ctr--)
+            {
+                sb.Append(lookup[bytes[ctr]]);
+            }
+            return sb.ToString().TrimStart('0');
+        }
         private static string EdgeWeightsNew(Dictionary<int, HashSet<int>> tree, List<int[]> minSpanTree, int n, int len)
         {
             int[] result = new int[len];

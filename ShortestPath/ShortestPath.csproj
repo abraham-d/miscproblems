@@ -185,6 +185,9 @@
     <Compile Include="CodeFile4.cs" />
     <Compile Include="CodeFile5.cs" />
     <Compile Include="CodeFile6.cs" />
+    <Compile Include="CodeFile7.cs" />
+    <Compile Include="CodeFile8.cs" />
+    <Compile Include="CodeFile9.cs" />
     <Compile Include="graph.cs" />
     <Compile Include="GraphAlgo.cs" />
     <Compile Include="MinSpanTree.cs" />
