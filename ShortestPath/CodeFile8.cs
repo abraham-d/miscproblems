@@ -11,7 +11,7 @@ namespace ShortestPath
     {
         static void EugeneTest()
         {
-            string filename = @"..\..\euinput01.txt";
+            string filename = @"..\..\euinput02.txt";
             using (StreamReader file = new StreamReader(filename))
             {
                 int t = Convert.ToInt32(file.ReadLine());
@@ -23,10 +23,10 @@ namespace ShortestPath
                     int a = Convert.ToInt32(anm[0]);
                     long n = Convert.ToInt64(anm[1]);
                     int m = Convert.ToInt32(anm[2]);
-                    int result = Solve(a, n, m);
+                    int result = Solve1(a, n, m);
                     sw.Stop();
                     Console.WriteLine($"Result : {result}  Elapsed : {sw.Elapsed}");
-                    Console.WriteLine($"Solve1 : {Solve1(a,n,m)}");
+                    //Console.WriteLine($"Solve1 : {Solve1(a,n,m)}");
                 }
             }
         }
@@ -102,13 +102,44 @@ namespace ShortestPath
         {
             int numDigits = NumDigits(a);
             int amodm = a % m;
-            BigInteger mode = new BigInteger();
+            //BigInteger mode = new BigInteger();
             long value = (long)Math.Pow(10, numDigits);
-            var x = BigInteger.ModPow(value, n, m);
-            var y = BigInteger.Multiply(x, amodm);
-            BigInteger.DivRem(y, m, out mode);
-            var z = BigInteger.Subtract(mode, amodm);
-            BigInteger.DivRem(z, m, out mode);
+            int imax = int.MaxValue;
+            BigInteger b = new BigInteger(1);
+            long p = n;
+            int exp = 0;
+            while (p > imax)
+            {
+                int rem = (int)(n % imax);
+                p /= imax;
+                BigInteger t = new BigInteger(value);
+                if (rem > 0)
+                {
+                    t = BigInteger.Pow(t, rem);
+                    for (int j = 0; j < exp; j++)
+                    {
+                        t = BigInteger.Pow(t, imax);
+                    }
+                    b = b * t;
+                }
+                
+                exp++;
+            }
+            BigInteger t1 = new BigInteger(value);
+            t1 = BigInteger.Pow(t1, (int)p);
+            for(int k = 0; k < exp; k++)
+            {
+                t1 = BigInteger.Pow(t1, imax);
+            }
+            b = b * t1;
+
+            var modv = (b - 1) / (value - 1);
+            var mode = ((modv % m)*a)%m;
+            //var x = BigInteger.ModPow(value, n, m);
+            //var y = BigInteger.Multiply(x, amodm);
+            //BigInteger.DivRem(y, m, out mode);
+            //var z = BigInteger.Subtract(mode, amodm);
+            //BigInteger.DivRem(z, m, out mode);
             return (int)mode;
         }
         static long Inverse(int numDigits, int m)

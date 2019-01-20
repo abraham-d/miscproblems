@@ -26,10 +26,10 @@ namespace ShortestPath
 
             //BigIntTest();
 
-            //EugeneTest();
+            EugeneTest();
             //ETest();
 
-            CircularBuffertest();
+            //CircularBuffertest();
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
