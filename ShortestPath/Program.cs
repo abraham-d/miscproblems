@@ -22,11 +22,11 @@ namespace ShortestPath
 
             //GraphNew.GraphTest();
 
-            //JeaniesRouteTest();
+            JeaniesRouteTest();
 
             //BigIntTest();
 
-            EugeneTest();
+            //EugeneTest();
             //ETest();
 
             //CircularBuffertest();

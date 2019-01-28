@@ -14,8 +14,9 @@ namespace MiscExperiments
 
             //XorMatrix();
 
-            PairsTest();
+            //PairsTest();
 
+            PrimeCountTest();
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }

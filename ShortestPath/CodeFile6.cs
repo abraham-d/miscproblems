@@ -31,9 +31,10 @@ namespace ShortestPath
                 Console.WriteLine("Result : {0}  Elapsed time : {1}", result, sw.Elapsed);
             }
         }
-        static int JeanisRoute(int[] k, int[][] roads)
+        static int JeanisRoute(int[] k, int[][] rds)
         {
-            bool[] status = new bool[roads.Length];
+            HashSet<int[]> roads = new HashSet<int[]>(rds);
+            bool[] status = new bool[roads.Count];
             FilterRoads(roads, k, status);
             var filtered = roads.Zip(status, (x, y) => new { edge = x, status = y })
                             .Where(x => x.status == false)
@@ -43,7 +44,7 @@ namespace ShortestPath
 
             //var mst = Kruskal(filtered, roads.Length + 2);
             //var s = filtered.OrderByDescending(x => x[1]).First()[0];
-            var mst = filtered;
+            var mst = new HashSet<int[]>(filtered);
             var n1 = BFS(mst, filtered.First()[0]);
             var n2 = BFS(mst, n1.Item1, true);
             //var n2 = BFS(mst, s, true);
@@ -144,23 +145,29 @@ namespace ShortestPath
             }
         }
 
-        static void FilterRoads(int[][] roads, int[] city, bool[] status)
+        static void FilterRoads(HashSet<int[]> roads, int[] city, bool[] status)
         {
             var ct = new HashSet<int>(city);
             var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
             while (true)
             {
-                //Console.WriteLine("Nodes to Exclude {0} -- {1}", status.Count(x => x == true), status.Count(x => x == false));
-                //var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
                 var nodesToExclude = roadsWithStatus.Select((x, i) => new { node = x.edge[0], index = i, status = x.status })
                                         .Concat(roadsWithStatus.Select((x, i) => new { node = x.edge[1], index = i, status = x.status }))
                                         .Where(x => (x.status == false && !ct.Contains(x.node)))
                                         .GroupBy(x => x.node)
                                         .Where(x => x.Count() == 1)
                                         .Select(x => x.First().index);
-                                        //.Select(x => new { key = x.Key, index = x.Max(y => y.index), count = x.Count() })
-                                        //.Where(x => x.count == 1)
-                                        //.Select(x => x.index);
+                //Console.WriteLine("Nodes to Exclude {0} -- {1}", status.Count(x => x == true), status.Count(x => x == false));
+                //var roadsWithStatus = roads.Zip(status, (x, y) => new { edge = x, status = y });
+                //var nodesToExclude = roadsWithStatus.Select((x, i) => new { node = x.edge[0], index = i, status = x.status })
+                //                        .Concat(roadsWithStatus.Select((x, i) => new { node = x.edge[1], index = i, status = x.status }))
+                //                        .Where(x => (x.status == false && !ct.Contains(x.node)))
+                //                        .GroupBy(x => x.node)
+                //                        .Where(x => x.Count() == 1)
+                //                        .Select(x => x.First().index);
+                //.Select(x => new { key = x.Key, index = x.Max(y => y.index), count = x.Count() })
+                //.Where(x => x.count == 1)
+                //.Select(x => x.index);
                 if (nodesToExclude.Any())
                 {
                     foreach (int index in nodesToExclude) status[index] = true;
